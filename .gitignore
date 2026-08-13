@@ -141,3 +141,19 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Uploaded files
+uploads/
+storage/
+
+# Encryption keys
+.encryption_key
+.encryption_iv
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary files
+tmp/
+temp/
