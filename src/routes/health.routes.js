@@ -1,12 +1,8 @@
 import { Router } from "express"
+import { getHealth } from "../controllers/health.controller.js"
 
 const router = Router() // Mini Express application dedicated to a group of routes
 
-router.get("/", (req, res) => {
-    res.json({
-        status: "ok",
-        message: "Cloud Storage API is running"
-    })
-})
+router.get("/", getHealth)
 
 export default router
