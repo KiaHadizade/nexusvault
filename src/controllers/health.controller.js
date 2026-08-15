@@ -2,6 +2,7 @@
 export const getHealth = (req, res) => {
     res.json({
         status: "ok",
-        message: "Cloud Storage API is running"
+        message: "Cloud Storage API is running",
+        requestTime: req.requestTime
     })
 }
