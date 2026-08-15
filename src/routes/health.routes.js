@@ -5,4 +5,12 @@ const router = Router() // Mini Express application dedicated to a group of rout
 
 router.get("/", getHealth)
 
+router.post("/test", (req, res) => {
+    console.log(req.body)
+
+    res.json({
+        received: req.body
+    })
+})
+
 export default router
