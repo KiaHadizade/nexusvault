@@ -1,5 +1,6 @@
 import express from "express"
 import healthRouter from "./routes/health.routes.js"
+import authRouter from "./routes/auth.routes.js"
 import requestLogger from "./middleware/logger.middleware.js"
 import errorHandler from "./middleware/error.middleware.js"
 
@@ -11,6 +12,7 @@ app.use(requestLogger)
 
 // Route
 app.use("/api/health", healthRouter)
+app.use("/api/auth", authRouter)
 
 app.use(errorHandler) // The error handler is placed after routes
 
