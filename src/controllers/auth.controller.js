@@ -1,7 +1,8 @@
 // Registration controller
 import User from "../models/user.model.js"
-import { hashPassword, generateToken } from "../services/auth.service.js"
+import { hashPassword, comparePassword, generateToken } from "../services/auth.service.js"
 
+// REGISTER
 export const register = async (req, res, next) => {
     try {
         // Extract the request body
@@ -38,6 +39,48 @@ export const register = async (req, res, next) => {
 
         res.status(201).json({
             message: "Registration successful",
+            token
+        })
+
+    } catch (error) {
+        next(error)
+    }
+}
+
+// LOGIN
+export const login = async (req, res, next) => {
+    try {
+        const { email, password } = req.body
+
+        if (!email || !password) {
+            return res.status(400).json({
+                message: "Email and password are required"
+            })
+        }
+
+        const user = await User.findOne({ email })
+
+        if (!user) {
+            return res.status(401).json({
+                message: "Invalid email or password"
+            })
+        }
+
+        const passwordMatches = await comparePassword(
+            password,
+            user.password
+        )
+
+        if (!passwordMatches) {
+            return res.status(401).json({
+                message: "Invalid email or password"
+            })
+        }
+
+        const token = generateToken(user._id.toString())
+
+        res.status(200).json({
+            message: "Login successful",
             token
         })
 
