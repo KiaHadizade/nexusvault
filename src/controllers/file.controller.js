@@ -1,3 +1,5 @@
+import fs from "node:fs"
+import path from "node:path"
 import File from "../models/file.model.js"
 
 export const uploadFile = async (req, res, next) => {
@@ -49,6 +51,45 @@ export const listFiles = async (req, res, next) => {
                 createdAt: file.createdAt
             }))
         })
+
+    } catch (error) {
+        next(error)
+    }
+}
+
+export const downloadFile = async (req, res, next) => {
+    try {
+        const { id } = req.params
+
+        const file = await File.findById(id)
+
+        if (!file) {
+            return res.status(404).json({
+                message: "File not found"
+            })
+        }
+
+        if (file.owner.toString() !== req.user.id) {
+            return res.status(403).json({
+                message: "You are not allowed to access this file"
+            })
+        }
+
+        const filePath = path.resolve(
+            "storage",
+            file.storedName
+        )
+
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({
+                message: "Physical file not found"
+            })
+        }
+
+        res.download(
+            filePath,
+            file.originalName
+        )
 
     } catch (error) {
         next(error)
