@@ -31,3 +31,26 @@ export const uploadFile = async (req, res, next) => {
         next(error)
     }
 }
+
+export const listFiles = async (req, res, next) => {
+    try {
+        const files = await File.find({
+            owner: req.user.id
+        }).sort({
+            createdAt: -1
+        })
+
+        res.status(200).json({
+            files: files.map((file) => ({
+                id: file._id,
+                originalName: file.originalName,
+                mimeType: file.mimeType,
+                size: file.size,
+                createdAt: file.createdAt
+            }))
+        })
+
+    } catch (error) {
+        next(error)
+    }
+}
