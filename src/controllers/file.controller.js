@@ -95,3 +95,43 @@ export const downloadFile = async (req, res, next) => {
         next(error)
     }
 }
+
+export const deleteFile = async (req, res, next) => {
+    try {
+        const { id } = req.params
+
+        const file = await File.findById(id)
+
+        if (!file) {
+            return res.status(404).json({
+                message: "File not found"
+            })
+        }
+
+        if (file.owner.toString() !== req.user.id) {
+            return res.status(403).json({
+                message: "You are not allowed to delete this file"
+            })
+        }
+
+        const filePath = path.resolve(
+            "storage",
+            file.storedName
+        )
+
+        if (fs.existsSync(filePath)) {
+            await fs.promises.unlink(filePath)
+        }
+
+        await File.deleteOne({
+            _id: file._id
+        })
+
+        res.status(200).json({
+            message: "File deleted successfully"
+        })
+
+    } catch (error) {
+        next(error)
+    }
+}
