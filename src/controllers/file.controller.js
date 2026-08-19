@@ -1,7 +1,8 @@
 import fs from "node:fs"
 import path from "node:path"
+import crypto from "node:crypto"
 import File from "../models/file.model.js"
-import { encryptFile } from "../services/encryption.service.js"
+import { encryptFile, decryptFile } from "../services/encryption.service.js"
 
 export const uploadFile = async (req, res, next) => {
     try {
@@ -13,7 +14,7 @@ export const uploadFile = async (req, res, next) => {
 
         const storedName = `${req.file.filename}.enc`
         const outputPath = path.resolve("storage", storedName)
-        
+
         await encryptFile(req.file.path, outputPath)
         await fs.promises.unlink(req.file.path)
 
@@ -84,20 +85,43 @@ export const downloadFile = async (req, res, next) => {
             })
         }
 
-        const filePath = path.resolve(
+        const encryptedPath = path.resolve(
             "storage",
             file.storedName
         )
 
-        if (!fs.existsSync(filePath)) {
+        if (!fs.existsSync(encryptedPath)) {
             return res.status(404).json({
                 message: "Physical file not found"
             })
         }
 
+        const temporaryPath = path.resolve(
+            "tmp",
+            `download-${crypto.randomUUID()}`
+        )
+
+        await decryptFile(
+            encryptedPath,
+            temporaryPath
+        )
+
         res.download(
-            filePath,
-            file.originalName
+            temporaryPath,
+            file.originalName,
+            async (error) => {
+                try {
+                    await fs.promises.unlink(
+                        temporaryPath
+                    )
+                } catch {
+                    // Ignore cleanup errors.
+                }
+
+                if (error && !res.headersSent) {
+                    next(error)
+                }
+            }
         )
 
     } catch (error) {
