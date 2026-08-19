@@ -145,6 +145,7 @@ vite.config.ts.timestamp-*
 # Uploaded files
 uploads/
 storage/
+temp/
 
 # Encryption keys
 .encryption_key
