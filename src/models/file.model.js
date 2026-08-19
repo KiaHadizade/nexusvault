@@ -25,6 +25,11 @@ const fileSchema = new mongoose.Schema(
             required: true
         },
 
+        encrypted: {
+            type: Boolean,
+            default: true
+        },
+
         // Connects a file to a user
         owner: {
             type: mongoose.Schema.Types.ObjectId,
