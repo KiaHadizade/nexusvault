@@ -1,6 +1,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import File from "../models/file.model.js"
+import { encryptFile } from "../services/encryption.service.js"
 
 export const uploadFile = async (req, res, next) => {
     try {
@@ -10,12 +11,19 @@ export const uploadFile = async (req, res, next) => {
             })
         }
 
+        const storedName = `${req.file.filename}.enc`
+        const outputPath = path.resolve("storage", storedName)
+        
+        await encryptFile(req.file.path, outputPath)
+        await fs.promises.unlink(req.file.path)
+
         const file = await File.create({
             originalName: req.file.originalname,
-            storedName: req.file.filename,
+            storedName,
             mimeType: req.file.mimetype,
             size: req.file.size,
-            owner: req.user.id
+            owner: req.user.id,
+            encrypted: true
         })
 
         res.status(201).json({
@@ -25,6 +33,7 @@ export const uploadFile = async (req, res, next) => {
                 originalName: file.originalName,
                 mimeType: file.mimeType,
                 size: file.size,
+                encrypted: file.encrypted,
                 createdAt: file.createdAt
             }
         })
