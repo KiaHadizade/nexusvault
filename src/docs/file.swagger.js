@@ -21,6 +21,11 @@
  * /api/files/upload:
  *   post:
  *     summary: Upload a file
+ *     description: |
+ *       Upload a file to NexusVault.
+ *
+ *       The uploaded file is encrypted using AES-256-GCM
+ *       before it is stored on the server.
  *     tags:
  *       - Files
  *     security:
@@ -37,6 +42,7 @@
  *               file:
  *                 type: string
  *                 format: binary
+ *                 description: File to upload
  *     responses:
  *       201:
  *         description: File uploaded successfully
@@ -53,6 +59,12 @@
  * /api/files/{id}/download:
  *   get:
  *     summary: Download a file
+ *     description: |
+ *       Download a file owned by the authenticated user.
+ *
+ *       The file is stored encrypted on the server.
+ *       It is decrypted using AES-256-GCM before being
+ *       returned to the client.
  *     tags:
  *       - Files
  *     security:
