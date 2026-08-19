@@ -1,7 +1,7 @@
 import multer from "multer"
 
 const upload = multer({
-    dest: "temp/"
+    dest: "tmp/"
 })
 
 export default upload
