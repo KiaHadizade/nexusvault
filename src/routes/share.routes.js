@@ -4,6 +4,6 @@ import authMiddleware from "../middleware/auth.middleware.js"
 
 const router = Router()
 
-router.post("/files/:id/share", authMiddleware, createShare)
+router.post("/:id", authMiddleware, createShare)
 
 export default router
