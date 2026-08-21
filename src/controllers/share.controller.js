@@ -28,7 +28,7 @@ export const createShare = async (req, res, next) => {
         })
 
         res.status(201).json({
-            message: "Share link created successfully",
+            message: "Share created successfully",
             share: {
                 id: share._id,
                 token,
