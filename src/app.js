@@ -3,6 +3,7 @@ import healthRouter from "./routes/health.routes.js"
 import authRouter from "./routes/auth.routes.js"
 import fileRouter from "./routes/file.routes.js"
 import shareRouter from "./routes/share.routes.js"
+import statisticsRouter from "./routes/statistics.routes.js"
 import requestLogger from "./middleware/logger.middleware.js"
 import errorHandler from "./middleware/error.middleware.js"
 // Swagger docs
@@ -23,6 +24,7 @@ app.use("/api/health", healthRouter)
 app.use("/api/auth", authRouter)
 app.use("/api/files", fileRouter)
 app.use("/api/share", shareRouter)
+app.use("/api", statisticsRouter)
 
 app.use(errorHandler) // The error handler is placed after routes
 
