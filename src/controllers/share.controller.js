@@ -9,7 +9,7 @@ import { generateShareToken, hashShareToken } from "../services/share.service.js
 export const createShare = async (req, res, next) => {
     try {
         const { id } = req.params
-        const { expiresIn, maxDownloads } = req.body
+        const { expiresIn, maxDownloads } = req.body ?? {}
         const file = await File.findById(id)
 
         if (!file) {
@@ -86,6 +86,18 @@ export const downloadSharedFile = async (req, res, next) => {
 
         const file = share.file
 
+        if (!file) {
+            return res.status(404).json({
+                message: "File not found"
+            })
+        }
+
+        if (share.revoked) {
+            return res.status(410).json({
+                message: "Share link has been revoked"
+            })
+        }
+
         // Check expiration
         if (share.expiresAt && share.expiresAt <= new Date()) {
             return res.status(410).json({
@@ -122,6 +134,45 @@ export const downloadSharedFile = async (req, res, next) => {
             temporaryPath
         )
 
+        // Atomic increment
+        const updatedShare = await Share.findOneAndUpdate(
+            {
+                _id: share._id,
+                revoked: false,
+
+                $or: [
+                    {
+                        maxDownloads: null
+                    },
+                    {
+                        $expr: {
+                            $lt: [
+                                "$downloadCount",
+                                "$maxDownloads"
+                            ]
+                        }
+                    }
+                ]
+            },
+            {
+                $inc: {
+                    downloadCount: 1
+                }
+            },
+            {
+                returnDocument: 'after'
+                // new: true
+            }
+        )
+
+        if (!updatedShare) {
+            await fs.promises.unlink(temporaryPath)
+            temporaryPath = undefined
+            return res.status(410).json({
+                message: "Download limit reached"
+            })
+        }
+
         // Send the file
         res.download(temporaryPath, file.originalName, async (error) => {
             try {
@@ -138,6 +189,16 @@ export const downloadSharedFile = async (req, res, next) => {
         })
 
     } catch (error) {
+        if (temporaryPath) {
+            try {
+                await fs.promises.unlink(
+                    temporaryPath
+                )
+            } catch {
+                // Ignore cleanup errors.
+            }
+        }
+
         next(error)
     }
 }
