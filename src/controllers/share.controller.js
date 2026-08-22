@@ -70,6 +70,10 @@ export const createShare = async (req, res, next) => {
 }
 
 export const downloadSharedFile = async (req, res, next) => {
+    // TODO -  let temporaryPath
+    // NOTE - temporaryPath declared outside the try because if `decryptFile()` fails after creating the temporary file,
+    // our catch can still attempt `fs.promises.unlink(temporaryPath)`. This gives a much safer cleanup strategy.
+    
     try {
         const { token } = req.params
         const tokenHash = hashShareToken(token)
@@ -106,11 +110,11 @@ export const downloadSharedFile = async (req, res, next) => {
         }
 
         // Check download limit
-        if (share.maxDownloads !== null && share.downloadCount >= share.maxDownloads) {
-            return res.status(410).json({
-                message: "Download limit reached"
-            })
-        }
+        // if (share.maxDownloads !== null && share.downloadCount >= share.maxDownloads) {
+        //     return res.status(410).json({
+        //         message: "Download limit reached"
+        //     })
+        // }
 
         // Decrypt the file
         const encryptedPath = path.resolve(
@@ -123,6 +127,12 @@ export const downloadSharedFile = async (req, res, next) => {
                 message: "Physical file not found"
             })
         }
+
+        //TODO - 
+        // temporaryPath = path.resolve(
+        //     "tmp",
+        //     `share-${crypto.randomUUID()}`
+        // )
 
         const temporaryPath = path.resolve(
             "tmp",
