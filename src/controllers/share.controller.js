@@ -9,6 +9,7 @@ import { generateShareToken, hashShareToken } from "../services/share.service.js
 export const createShare = async (req, res, next) => {
     try {
         const { id } = req.params
+        const { expiresIn, maxDownloads } = req.body
         const file = await File.findById(id)
 
         if (!file) {
@@ -23,12 +24,33 @@ export const createShare = async (req, res, next) => {
             })
         }
 
+        if (expiresIn !== undefined && (!Number.isInteger(expiresIn) || expiresIn <= 0)) {
+            return res.status(400).json({
+                message: "expiresIn must be a positive integer"
+            })
+        }
+
+        if (maxDownloads !== undefined && (!Number.isInteger(maxDownloads) || maxDownloads <= 0)) {
+            return res.status(400).json({
+                message: "maxDownloads must be a positive integer"
+            })
+        }
+
         const token = generateShareToken()
         const tokenHash = hashShareToken(token)
+        let expiresAt = null
+
+        if (expiresIn !== undefined) {
+            expiresAt = new Date(
+                Date.now() + expiresIn * 1000
+            )
+        }
 
         const share = await Share.create({
             file: file._id,
-            tokenHash
+            tokenHash,
+            expiresAt,
+            maxDownloads: maxDownloads ?? null
         })
 
         res.status(201).json({
@@ -37,7 +59,9 @@ export const createShare = async (req, res, next) => {
                 id: share._id,
                 token,
                 expiresAt: share.expiresAt,
-                maxDownloads: share.maxDownloads
+                maxDownloads: share.maxDownloads,
+                downloadCount: share.downloadCount,
+                revoked: share.revoked
             }
         })
     } catch (error) {
