@@ -202,3 +202,38 @@ export const downloadSharedFile = async (req, res, next) => {
         next(error)
     }
 }
+
+export const revokeShare = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const share = await Share.findById(id).populate("file")
+
+        if (!share) {
+            return res.status(404).json({
+                message: "Share not found"
+            })
+        }
+
+        if (share.file.owner.toString() !== req.user.id) {
+            return res.status(403).json({
+                message: "You are not allowed to revoke this share"
+            })
+        }
+
+        if (share.revoked) {
+            return res.status(400).json({
+                message: "Share is already revoked"
+            })
+        }
+
+        share.revoked = true
+
+        await share.save()
+
+        res.json({
+            message: "Share revoked successfully"
+        })
+    } catch (error) {
+        next(error)
+    }
+}
