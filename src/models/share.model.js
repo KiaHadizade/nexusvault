@@ -22,12 +22,19 @@ const shareSchema = new mongoose.Schema(
 
         maxDownloads: {
             type: Number,
-            default: null
+            default: null,
+            min: 1
         },
 
         downloadCount: {
             type: Number,
-            default: 0
+            default: 0,
+            min: 0
+        },
+
+        revoked: {
+            type: Boolean,
+            default: false
         }
     },
     {
