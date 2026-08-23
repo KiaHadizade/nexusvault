@@ -19,6 +19,7 @@ export const getStatistics = async (req, res, next) => {
                 total: shareStats.totalShares,
                 active: shareStats.activeShares,
                 revoked: shareStats.revokedShares,
+                limitReached: shareStats.limitReached,
                 expired: shareStats.expiredShares
             },
 
