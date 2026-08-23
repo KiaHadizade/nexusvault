@@ -27,7 +27,7 @@ export const getFileStatistics = async (userId) => {
 
     return result[0] ?? {
         totalFiles: 0,
-        totalSize: 0
+        totalSize: 0 // is in bytes
     }
 }
 
@@ -61,6 +61,103 @@ export const getShareStatistics = async (userId) => {
                     $sum: 1
                 },
 
+                // Priority 1: Revoked
+                revokedShares: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $eq: [
+                                    "$revoked",
+                                    true
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                },
+
+                // Priority 2: Expired
+                expiredShares: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    {
+                                        $eq: [
+                                            "$revoked",
+                                            false
+                                        ]
+                                    },
+                                    {
+                                        $ne: [
+                                            "$expiresAt",
+                                            null
+                                        ]
+                                    },
+                                    {
+                                        $lte: [
+                                            "$expiresAt",
+                                            now
+                                        ]
+                                    }
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                },
+
+                // Priority 3: Download limit reached
+                limitReached: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    {
+                                        $eq: [
+                                            "$revoked",
+                                            false
+                                        ]
+                                    },
+                                    {
+                                        $or: [
+                                            {
+                                                $eq: [
+                                                    "$expiresAt",
+                                                    null
+                                                ]
+                                            },
+                                            {
+                                                $gt: [
+                                                    "$expiresAt",
+                                                    now
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        $ne: [
+                                            "$maxDownloads",
+                                            null
+                                        ]
+                                    },
+                                    {
+                                        $gte: [
+                                            "$downloadCount",
+                                            "$maxDownloads"
+                                        ]
+                                    }
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                },
+
+                // Priority 4: Active
                 activeShares: {
                     $sum: {
                         $cond: [
@@ -87,40 +184,21 @@ export const getShareStatistics = async (userId) => {
                                                 ]
                                             }
                                         ]
-                                    }
-                                ]
-                            },
-                            1,
-                            0
-                        ]
-                    }
-                },
-
-                revokedShares: {
-                    $sum: {
-                        $cond: [
-                            "$revoked",
-                            1,
-                            0
-                        ]
-                    }
-                },
-
-                expiredShares: {
-                    $sum: {
-                        $cond: [
-                            {
-                                $and: [
-                                    {
-                                        $ne: [
-                                            "$expiresAt",
-                                            null
-                                        ]
                                     },
                                     {
-                                        $lte: [
-                                            "$expiresAt",
-                                            now // or - new Date()
+                                        $or: [
+                                            {
+                                                $eq: [
+                                                    "$maxDownloads",
+                                                    null
+                                                ]
+                                            },
+                                            {
+                                                $lt: [
+                                                    "$downloadCount",
+                                                    "$maxDownloads"
+                                                ]
+                                            }
                                         ]
                                     }
                                 ]
@@ -143,6 +221,7 @@ export const getShareStatistics = async (userId) => {
         activeShares: 0,
         revokedShares: 0,
         expiredShares: 0,
+        limitReached: 0,
         totalDownloads: 0
     }
 }
