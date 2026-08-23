@@ -4,6 +4,6 @@ import authMiddleware from "../middleware/auth.middleware.js"
 
 const router = Router()
 
-router.get("/stats", authMiddleware, getStatistics)
+router.get("/", authMiddleware, getStatistics)
 
 export default router

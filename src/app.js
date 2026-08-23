@@ -24,7 +24,7 @@ app.use("/api/health", healthRouter)
 app.use("/api/auth", authRouter)
 app.use("/api/files", fileRouter)
 app.use("/api/share", shareRouter)
-app.use("/api", statisticsRouter)
+app.use("/api/stats", statisticsRouter)
 
 app.use(errorHandler) // The error handler is placed after routes
 
