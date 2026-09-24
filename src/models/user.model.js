@@ -14,6 +14,13 @@ const userSchema = new mongoose.Schema(
         password: {
             type: String,
             required: true
+        },
+
+        storageQuota: {
+            type: Number,
+            required: true,
+            default: 1073741824, // 1073741824 bytes = 1024 MB = 1 GB
+            min: 0
         }
     },
     {
