@@ -1,8 +1,20 @@
 import mongoose from "mongoose"
 import File from "../models/file.model.js"
 import Share from "../models/share.model.js"
+import User from "../models/user.model.js"
 
-// File statistics
+// Quota Statistics
+export const getStorageQuota = async (userId) => {
+    const user = await User.findById(userId).select("storageQuota") //NOTE - User.findById(userId) returns the whole user document
+
+    if (!user) {
+        throw new Error("User not found")
+    }
+
+    return user.storageQuota
+}
+
+// File Statistics
 export const getFileStatistics = async (userId) => {
     const ownerId = new mongoose.Types.ObjectId(userId)
 
@@ -31,7 +43,7 @@ export const getFileStatistics = async (userId) => {
     }
 }
 
-// Share statistics
+// Share Statistics
 export const getShareStatistics = async (userId) => {
     const ownerId = new mongoose.Types.ObjectId(userId)
     const now = new Date()
