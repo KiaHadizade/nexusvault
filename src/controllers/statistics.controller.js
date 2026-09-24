@@ -1,15 +1,35 @@
-import { getFileStatistics, getShareStatistics } from "../services/statistics.service.js"
+import { getFileStatistics, getShareStatistics, getStorageQuota } from "../services/statistics.service.js"
 
 export const getStatistics = async (req, res, next) => {
     try {
         const userId = req.user.id
 
-        const [fileStats, shareStats] = await Promise.all([
+        const [fileStats, shareStats, storageQuota] = await Promise.all([
             getFileStatistics(userId),
-            getShareStatistics(userId)
-        ])
+            getShareStatistics(userId),
+            getStorageQuota(userId)
+        ]) //NOTE - All three operations happen concurrently
 
+        // Calculate the storage values
+        const storageUsed = fileStats.totalSize
+        const storageRemaining = Math.max(storageQuota - storageUsed, 0) //NOTE - We don't want the API returning negative values if something went wrong
+        const usagePercentage =
+            storageQuota === 0
+                ? 0
+                : Math.min(
+                    (storageUsed / storageQuota) * 100,
+                    100
+                ) //NOTE - To guarantee the displayed percentage never exceeds 100
+
+        // Response
         res.json({
+            storage: {
+                quota: storageQuota,
+                used: storageUsed,
+                remaining: storageRemaining,
+                usagePercentage
+            },
+
             files: {
                 total: fileStats.totalFiles,
                 totalSize: fileStats.totalSize
