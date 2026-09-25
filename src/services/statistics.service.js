@@ -237,3 +237,111 @@ export const getShareStatistics = async (userId) => {
         totalDownloads: 0
     }
 }
+
+// File-Type Statistics
+export const getFileTypeStatistics = async (userId) => {
+    const ownerId = new mongoose.Types.ObjectId(userId)
+
+    const result = await File.aggregate([
+        {
+            $match: {
+                owner: ownerId
+            }
+        },
+
+        {
+            $project: {
+                category: {
+                    $switch: {
+                        branches: [
+                            {
+                                case: {
+                                    $regexMatch: {
+                                        input: "$mimeType",
+                                        regex: "^image/"
+                                    }
+                                },
+                                then: "image"
+                            }, // Image detection
+
+                            {
+                                case: {
+                                    $regexMatch: {
+                                        input: "$mimeType",
+                                        regex: "^video/"
+                                    }
+                                },
+                                then: "video"
+                            }, // Video detection
+
+                            {
+                                case: {
+                                    $regexMatch: {
+                                        input: "$mimeType",
+                                        regex: "^audio/"
+                                    }
+                                },
+                                then: "audio"
+                            }, // Audio detection
+
+                            {
+                                case: {
+                                    $in: [
+                                        "$mimeType",
+                                        [
+                                            "application/pdf",
+                                            "text/plain",
+                                            "text/csv",
+                                            "application/msword",
+                                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                            "application/vnd.ms-excel",
+                                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                            "application/vnd.ms-powerpoint",
+                                            "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                                        ]
+                                    ]
+                                },
+                                then: "document"
+                            } // Documents detection
+                        ],
+
+                        default: "other"
+                    }
+                },
+
+                size: 1
+            }
+        },
+
+        {
+            $group: {
+                _id: "$category",
+
+                count: {
+                    $sum: 1
+                },
+
+                size: {
+                    $sum: "$size"
+                }
+            }
+        },
+
+        {
+            $project: {
+                _id: 0,
+                type: "$_id",
+                count: 1,
+                size: 1
+            }
+        },
+
+        {
+            $sort: {
+                count: -1 //NOTE - -1 means descending
+            }
+        }
+    ])
+
+    return result
+}
