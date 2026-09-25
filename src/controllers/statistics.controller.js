@@ -1,15 +1,22 @@
-import { getFileStatistics, getShareStatistics, getStorageQuota, getFileTypeStatistics } from "../services/statistics.service.js"
+import { 
+    getFileStatistics,
+    getShareStatistics,
+    getStorageQuota,
+    getFileTypeStatistics,
+    getDownloadsPerFile
+} from "../services/statistics.service.js"
 
 export const getStatistics = async (req, res, next) => {
     try {
         const userId = req.user.id
 
-        const [fileStats, shareStats, storageQuota, fileTypeStats] = await Promise.all([
+        const [fileStats, shareStats, storageQuota, fileTypeStats, downloadsPerFile] = await Promise.all([
             getFileStatistics(userId),
             getShareStatistics(userId),
             getStorageQuota(userId),
-            getFileTypeStatistics(userId)
-        ]) //NOTE - All four operations happen concurrently
+            getFileTypeStatistics(userId),
+            getDownloadsPerFile(userId)
+        ]) //NOTE - All operations happen concurrently
 
         // Calculate the storage values
         const storageUsed = fileStats.totalSize
@@ -47,7 +54,8 @@ export const getStatistics = async (req, res, next) => {
             },
 
             downloads: {
-                total: shareStats.totalDownloads
+                total: shareStats.totalDownloads,
+                byFile: downloadsPerFile
             }
         })
     } catch (error) {
