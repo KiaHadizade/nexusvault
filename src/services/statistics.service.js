@@ -345,3 +345,62 @@ export const getFileTypeStatistics = async (userId) => {
 
     return result
 }
+
+// Downloads Per File Statistics
+export const getDownloadsPerFile = async (userId) => {
+    const ownerId = new mongoose.Types.ObjectId(userId)
+
+    const result = await Share.aggregate([
+        {
+            $lookup: {
+                from: "files",
+                localField: "file",
+                foreignField: "_id",
+                as: "file"
+            } //NOTE - $lookup returns result as an array
+        },
+
+        {
+            $unwind: "$file" //NOTE - $unwind turns the array to object
+        },
+
+        {
+            $match: {
+                "file.owner": ownerId
+            } //NOTE - Restrict to user's own files
+        },
+
+        {
+            $group: {
+                _id: "$file._id", // Groupe the file by ID
+
+                fileName: {
+                    $first: "$file.originalName"
+                },
+                //NOTE - We have grouped the file by _id. So all the Shares inside a group belong to the same file
+                // As a result, the originalName of all of them is the same and we can pick one of them (the first one)
+
+                downloads: {
+                    $sum: "$downloadCount"
+                } //NOTE - A single file can have multiple shares
+            }
+        },
+
+        {
+            $project: {
+                _id: 0,
+                fileId: "$_id",
+                fileName: 1,
+                downloads: 1
+            } //NOTE - Output shape
+        },
+
+        {
+            $sort: {
+                downloads: -1
+            } //NOTE - Means that the most downloaded ones will be placed first
+        }
+    ])
+
+    return result
+}
