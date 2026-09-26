@@ -3,6 +3,7 @@ import path from "node:path"
 import crypto from "node:crypto"
 import File from "../models/file.model.js"
 import { encryptFile, decryptFile } from "../services/encryption.service.js"
+import { createActivity } from "../services/activity.service.js"
 
 export const uploadFile = async (req, res, next) => {
     try {
@@ -25,6 +26,13 @@ export const uploadFile = async (req, res, next) => {
             size: req.file.size,
             owner: req.user.id,
             encrypted: true
+        })
+
+        // Activity Registration API
+        await createActivity({
+            userId: req.user.id,
+            type: "upload",
+            fileId: file._id
         })
 
         res.status(201).json({
@@ -124,6 +132,13 @@ export const downloadFile = async (req, res, next) => {
             }
         )
 
+        // Activity Registration API
+        await createActivity({
+            userId: req.user.id,
+            type: "download",
+            fileId: file._id
+        })
+
     } catch (error) {
         next(error)
     }
@@ -158,6 +173,13 @@ export const deleteFile = async (req, res, next) => {
 
         await File.deleteOne({
             _id: file._id
+        })
+
+        // Activity Registration API
+        await createActivity({
+            userId: req.user.id,
+            type: "delete",
+            fileId: file._id
         })
 
         res.status(200).json({

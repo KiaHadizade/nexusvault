@@ -5,6 +5,7 @@ import File from "../models/file.model.js"
 import Share from "../models/share.model.js"
 import { decryptFile } from "../services/encryption.service.js"
 import { generateShareToken, hashShareToken } from "../services/share.service.js"
+import { createActivity } from "../services/activity.service.js"
 
 export const createShare = async (req, res, next) => {
     try {
@@ -51,6 +52,14 @@ export const createShare = async (req, res, next) => {
             tokenHash,
             expiresAt,
             maxDownloads: maxDownloads ?? null
+        })
+
+        // Activity Registration API
+        await createActivity({
+            userId: req.user.id,
+            type: "share",
+            fileId: file._id,
+            shareId: share._id
         })
 
         res.status(201).json({
@@ -198,6 +207,14 @@ export const downloadSharedFile = async (req, res, next) => {
             }
         })
 
+        // Activity Registration API
+        await createActivity({
+            userId: file.owner,
+            type: "download",
+            fileId: file._id,
+            shareId: share._id
+        })
+
     } catch (error) {
         if (temporaryPath) {
             try {
@@ -217,6 +234,7 @@ export const revokeShare = async (req, res, next) => {
     try {
         const { id } = req.params
         const share = await Share.findById(id).populate("file")
+        const file = share.file
 
         if (!share) {
             return res.status(404).json({
@@ -237,6 +255,14 @@ export const revokeShare = async (req, res, next) => {
         }
 
         share.revoked = true
+
+        // Activity Registration API
+        await createActivity({
+            userId: req.user.id,
+            type: "revoke",
+            fileId: file._id,
+            shareId: share._id
+        })
 
         await share.save()
 
