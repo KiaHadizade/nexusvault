@@ -2,6 +2,7 @@ import mongoose from "mongoose"
 import File from "../models/file.model.js"
 import Share from "../models/share.model.js"
 import User from "../models/user.model.js"
+import Activity from "../models/activity.model.js"
 
 // Quota Statistics
 export const getStorageQuota = async (userId) => {
@@ -401,6 +402,22 @@ export const getDownloadsPerFile = async (userId) => {
             } //NOTE - Means that the most downloaded ones will be placed first
         }
     ])
+
+    return result
+}
+
+export const getRecentActivity = async (userId, limit = 10) => {
+    const ownerId = new mongoose.Types.ObjectId(userId)
+
+    const result = await Activity.find({
+        user: ownerId
+    })
+        .sort({
+            createdAt: -1 //NOTE - createdAt comes automatically from `timestamps: true` We want newest first. MongoDB sorting -1 means descending
+        }) // means: newest -> oldest
+        .limit(limit)
+        .populate("file", "originalName") //NOTE - Take the file ObjectId and give me the corresponding File's originalName
+        .populate("share", "_id")
 
     return result
 }
