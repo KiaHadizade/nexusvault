@@ -4,20 +4,30 @@ import {
     getStorageQuota,
     getFileTypeStatistics,
     getDownloadsPerFile,
-    getRecentActivity
+    getRecentActivity,
+    getActivityTimeline
 } from "../services/statistics.service.js"
 
 export const getStatistics = async (req, res, next) => {
     try {
         const userId = req.user.id
 
-        const [fileStats, shareStats, storageQuota, fileTypeStats, downloadsPerFile, recentActivity] = await Promise.all([
+        const [
+            fileStats,
+            shareStats,
+            storageQuota,
+            fileTypeStats,
+            downloadsPerFile,
+            recentActivity,
+            activityTimeline
+        ] = await Promise.all([
             getFileStatistics(userId),
             getShareStatistics(userId),
             getStorageQuota(userId),
             getFileTypeStatistics(userId),
             getDownloadsPerFile(userId),
-            getRecentActivity(userId)
+            getRecentActivity(userId),
+            getActivityTimeline(userId)
         ]) //NOTE - All operations happen concurrently
 
         // Calculate the storage values
@@ -60,7 +70,8 @@ export const getStatistics = async (req, res, next) => {
                 byFile: downloadsPerFile
             },
 
-            activity: recentActivity
+            activity: recentActivity,
+            timeline: activityTimeline
         })
     } catch (error) {
         next(error)
