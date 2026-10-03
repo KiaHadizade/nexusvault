@@ -421,3 +421,109 @@ export const getRecentActivity = async (userId, limit = 10) => {
 
     return result
 }
+
+export const getActivityTimeline = async (userId, days = 7) => {
+    const ownerId = new mongoose.Types.ObjectId(userId)
+    
+    // Date filtering
+    const now = new Date()
+    const startDate = new Date(
+        now.getTime() -
+        days * 24 * 60 * 60 * 1000
+    )
+
+    const result = await Activity.aggregate([
+        {
+            // Find the relevant activities
+            $match: {
+                user: ownerId,
+
+                type: {
+                    $in: [
+                        "upload",
+                        "download"
+                    ]
+                },
+
+                createdAt: {
+                    $gte: startDate,
+                    $lte: now
+                } // startDate ≤ createdAt ≤ now
+            }
+            //NOTE - Give activities belonging to this user, where the activity is either an upload or download,
+            // and happened during the selected time period. So if days = 7, we only look at roughly the last seven days
+        },
+
+        {
+            $group: {
+                _id: {
+                    date: {
+                        $dateToString: {
+                            format: "%Y-%m-%d",
+                            date: "$createdAt"
+                        } // Converts the timestamp: 2026-09-25T18:42:13.123Z into: 2026-09-25
+                    },
+
+                    type: "$type"
+                },
+
+                count: {
+                    $sum: 1
+                }
+            } // Group activities by date & type
+        },
+
+        {
+            $group: {
+                _id: "$_id.date",
+
+                uploads: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $eq: [
+                                    "$_id.type",
+                                    "upload"
+                                ]
+                            },
+                            "$count",
+                            0
+                        ]
+                    }
+                },
+
+                downloads: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $eq: [
+                                    "$_id.type",
+                                    "download"
+                                ]
+                            },
+                            "$count",
+                            0
+                        ]
+                    }
+                }
+            }
+        },
+
+        {
+            $project: {
+                _id: 0,
+                date: "$_id",
+                uploads: 1,
+                downloads: 1
+            }
+        },
+
+        {
+            $sort: {
+                date: 1 // Descending
+            }
+        }
+    ])
+
+    return result
+}
