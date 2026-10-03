@@ -37,7 +37,12 @@ export const getStatistics = async (req, res, next) => {
             storageQuota === 0
                 ? 0
                 : Math.min(
-                    (storageUsed / storageQuota) * 100,
+                    Number(
+                        (
+                            (storageUsed / storageQuota) *
+                            100
+                        ).toFixed(2)
+                    ),
                     100
                 ) //NOTE - To guarantee the displayed percentage never exceeds 100
 
